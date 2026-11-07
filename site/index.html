@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Game Canvas</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#222;}
+#game{display:block;width:100%;height:100%;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize);
+resize();
+
+const groundHeight=80;
+const player={x:100,y:canvas.height-groundHeight-30,w:30,h:30,color:'#0f0',vx:0};
+const bullets=[];
+const keys={};
+
+document.addEventListener('keydown',e=>{keys[e.code]=true;});
+document.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+function update(dt){
+  // player movement
+  if(keys['ArrowLeft']) player.vx=-200;
+  else if(keys['ArrowRight']) player.vx=200;
+  else player.vx=0;
+  player.x+=player.vx*dt;
+  // keep inside screen
+  if(player.x<0) player.x=0;
+  if(player.x+player.w>canvas.width) player.x=canvas.width-player.w;
+  // shooting
+  if(keys['Space'] && !keys['_spaceLock']){
+    bullets.push({x:player.x+player.w/2,y:player.y,w:5,h:10,vy:-300});
+    keys['_spaceLock']=true;
+  }
+  if(!keys['Space']) keys['_spaceLock']=false;
+  // update bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];
+    b.y+=b.vy*dt;
+    if(b.y+b.h<0) bullets.splice(i,1);
+  }
+}
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // ground
+  ctx.fillStyle='#ff0';
+  ctx.fillRect(0,canvas.height-groundHeight,canvas.width,groundHeight);
+  // player
+  ctx.fillStyle=player.color;
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+  // bullets (oil spray)
+  ctx.fillStyle='#aaa';
+  bullets.forEach(b=>ctx.fillRect(b.x,b.y,b.w,b.h));
+}
+let last=performance.now();
+function loop(now){
+  const dt=(now-last)/1000;
+  last=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
